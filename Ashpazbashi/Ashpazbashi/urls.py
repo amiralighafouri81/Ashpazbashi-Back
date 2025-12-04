@@ -16,8 +16,24 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('playground/', include('playground.urls')),
+    # All API endpoints under /api/
+    # Each app's router registers its own resource name (e.g., 'recipes', 'ingredients')
+    path('api/auth/', include('users.urls')),  # /api/auth/users/, /api/auth/jwt/create/
+    path('api/', include('recipes.urls')),      # /api/recipes/
+    path('api/', include('ingredients.urls')),  # /api/ingredients/
+    path('api/', include('nutrition.urls')),    # /api/nutrition/
+    path('api/', include('bookmarks.urls')),    # /api/bookmarks/
+    path('api/', include('history.urls')),      # /api/history/
+    path('api/', include('categories.urls')),   # /api/categories/, /api/tags/, /api/dietary-types/
+    path('api/', include('sharing.urls')),      # /api/share/
 ]
+
+# Serve media files in development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
