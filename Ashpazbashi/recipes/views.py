@@ -179,7 +179,35 @@ class GenerationViewSet(viewsets.ReadOnlyModelViewSet):
             return Response({
                 'error': generation.error_message or 'Generation failed'
             }, status=status.HTTP_400_BAD_REQUEST)
+        elif generation.status == 'pending':
+            # First poll: mark as processing and keep returning 202
+            generation.status = 'processing'
+            generation.save(update_fields=['status', 'updated_at'])
+            return Response({
+                'status': generation.status,
+                'message': 'Generation is still in progress'
+            }, status=status.HTTP_202_ACCEPTED)
+        elif generation.status == 'processing':
+            # Second poll: create a basic recipe and mark as completed
+            if not generation.recipe:
+                recipe = Recipe.objects.create(
+                    title="دستور تولید شده با هوش مصنوعی",
+                    description="این دستور به صورت آزمایشی برای تست فرانت‌اند تولید شده است.",
+                    instructions="مرحله ۱: مواد لازم را آماده کنید.\nمرحله ۲: مطابق سلیقه خود آن‌ها را بپزید.\nمرحله ۳: غذا را سرو کرده و نوش جان کنید.",
+                    prep_time=20,
+                    cook_time=30,
+                    servings=2,
+                    difficulty='medium',
+                    author=generation.user,
+                )
+                generation.recipe = recipe
+            generation.status = 'completed'
+            generation.save(update_fields=['status', 'recipe', 'updated_at'])
+
+            from .serializers import RecipeDetailSerializer
+            return Response(RecipeDetailSerializer(generation.recipe).data)
         else:
+            # Fallback for any unexpected status
             return Response({
                 'status': generation.status,
                 'message': 'Generation is still in progress'
