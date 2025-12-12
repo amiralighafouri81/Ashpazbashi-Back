@@ -19,11 +19,11 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
-            'student_number', 'role', 'biography', 'profile_picture',
+            'biography', 'profile_picture',
             'profile', 'password', 'password_confirmation',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'role']
+        read_only_fields = ['id', 'created_at', 'updated_at']
         extra_kwargs = {
             'password': {'write_only': True},
         }
@@ -62,7 +62,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'username', 'email', 'first_name', 'last_name',
-            'student_number', 'password', 'password_confirmation'
+            'password', 'password_confirmation'
         ]
     
     def validate(self, attrs):
@@ -79,5 +79,4 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         # Create user profile
         UserProfile.objects.create(user=user)
         return user
-
 

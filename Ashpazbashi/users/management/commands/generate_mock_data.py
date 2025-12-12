@@ -165,7 +165,6 @@ class Command(BaseCommand):
                 first_name=fake.first_name(),
                 last_name=fake.last_name(),
                 password='password123',
-                student_number=fake.numerify(text='#######') if random.choice([True, False]) else None,
                 biography=fake.text(max_nb_chars=200) if random.choice([True, False]) else None,
             )
             UserProfile.objects.get_or_create(
@@ -392,4 +391,3 @@ class Command(BaseCommand):
             Category.objects.all().delete()
             Tag.objects.all().delete()
             DietaryType.objects.all().delete()
-

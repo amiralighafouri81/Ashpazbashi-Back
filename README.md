@@ -63,7 +63,6 @@ The API will be available at `http://127.0.0.1:8000/`
   "email": "user@example.com",
   "first_name": "John",
   "last_name": "Doe",
-  "student_number": "1234567",
   "password": "password123",
   "password_confirmation": "password123"
 }
@@ -323,7 +322,7 @@ The API will be available at `http://127.0.0.1:8000/`
 
 ### User
 - Custom user model extending AbstractUser
-- Fields: username, email, first_name, last_name, student_number, role, biography, profile_picture
+- Fields: username, email, first_name, last_name, biography, profile_picture
 
 ### Recipe
 - Main recipe model with full CRUD support

@@ -23,7 +23,6 @@
 **Optional Fields**:
 - `first_name` (string)
 - `last_name` (string)
-- `student_number` (string, must be unique)
 
 **Example Request**:
 ```json
@@ -234,4 +233,3 @@ const recipesResponse = await fetch('http://127.0.0.1:8000/api/recipes/', {
 - Refresh tokens expire after **1 day** (configurable in settings)
 - Always store tokens securely (localStorage, sessionStorage, or httpOnly cookies)
 - Never expose tokens in client-side code that's publicly accessible
-
