@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from urllib.parse import unquote
 from .models import Recipe, RecipeIngredient, RecipeRating, RecipeGeneration
 from ingredients.models import Ingredient
 from ingredients.serializers import IngredientSerializer
@@ -37,6 +38,7 @@ class RecipeListSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     dietary_types = DietaryTypeSerializer(many=True, read_only=True)
+    image = serializers.SerializerMethodField()
     
     class Meta:
         model = Recipe
@@ -47,6 +49,51 @@ class RecipeListSerializer(serializers.ModelSerializer):
             'ratings_count', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'views_count', 'average_rating', 'ratings_count', 'created_at', 'updated_at']
+    
+    def get_image(self, obj):
+        """Custom method to handle external image URLs"""
+        if not obj.image:
+            return None
+        
+        # Get the image name/path from the model field
+        # If it's stored as a string in the database, use the name attribute
+        image_name = obj.image.name if hasattr(obj.image, 'name') else str(obj.image)
+        
+        # Check if the path contains URL-encoded external URL (http%3A or https%3A)
+        if 'http%3A' in image_name or 'https%3A' in image_name:
+            # First decode the URL-encoded string
+            decoded_url = unquote(image_name)
+            # Now decoded_url might be: "https://blog.okcs.com/wp-content/uploads/2021/05/1-1-2.jpg"
+            # or "http://127.0.0.1:8000/media/https://blog.okcs.com/..."
+            # Extract the part after /media/ if present
+            if '/media/' in decoded_url:
+                url_part = decoded_url.split('/media/')[-1]
+                # If the extracted part is a full external URL, use it directly
+                if url_part.startswith('http://') or url_part.startswith('https://'):
+                    return url_part
+                else:
+                    # If not, use the decoded URL as is
+                    return decoded_url
+            else:
+                # If it's already a full external URL, return it
+                if decoded_url.startswith('http://') or decoded_url.startswith('https://'):
+                    return decoded_url
+                # Otherwise, it might be a relative path
+                return decoded_url
+        # Check if it's already a full external URL (not from localhost)
+        elif image_name.startswith('https://'):
+            return image_name
+        elif image_name.startswith('http://') and '127.0.0.1' not in image_name and 'localhost' not in image_name:
+            return image_name
+        # Otherwise, it's a local file - return the full URL
+        else:
+            request = self.context.get('request')
+            if request and hasattr(obj.image, 'url'):
+                return request.build_absolute_uri(obj.image.url)
+            elif hasattr(obj.image, 'url'):
+                return obj.image.url
+            else:
+                return str(obj.image)
 
 
 class RecipeDetailSerializer(serializers.ModelSerializer):
@@ -58,6 +105,7 @@ class RecipeDetailSerializer(serializers.ModelSerializer):
     recipe_ingredients = RecipeIngredientSerializer(many=True, read_only=True)
     nutrition = NutritionSerializer(read_only=True)
     ratings = RecipeRatingSerializer(many=True, read_only=True)
+    image = serializers.SerializerMethodField()
     
     # For write operations
     category_id = serializers.PrimaryKeyRelatedField(
@@ -94,6 +142,51 @@ class RecipeDetailSerializer(serializers.ModelSerializer):
             'id', 'author', 'views_count', 'average_rating', 'ratings_count',
             'created_at', 'updated_at'
         ]
+    
+    def get_image(self, obj):
+        """Custom method to handle external image URLs"""
+        if not obj.image:
+            return None
+        
+        # Get the image name/path from the model field
+        # If it's stored as a string in the database, use the name attribute
+        image_name = obj.image.name if hasattr(obj.image, 'name') else str(obj.image)
+        
+        # Check if the path contains URL-encoded external URL (http%3A or https%3A)
+        if 'http%3A' in image_name or 'https%3A' in image_name:
+            # First decode the URL-encoded string
+            decoded_url = unquote(image_name)
+            # Now decoded_url might be: "https://blog.okcs.com/wp-content/uploads/2021/05/1-1-2.jpg"
+            # or "http://127.0.0.1:8000/media/https://blog.okcs.com/..."
+            # Extract the part after /media/ if present
+            if '/media/' in decoded_url:
+                url_part = decoded_url.split('/media/')[-1]
+                # If the extracted part is a full external URL, use it directly
+                if url_part.startswith('http://') or url_part.startswith('https://'):
+                    return url_part
+                else:
+                    # If not, use the decoded URL as is
+                    return decoded_url
+            else:
+                # If it's already a full external URL, return it
+                if decoded_url.startswith('http://') or decoded_url.startswith('https://'):
+                    return decoded_url
+                # Otherwise, it might be a relative path
+                return decoded_url
+        # Check if it's already a full external URL (not from localhost)
+        elif image_name.startswith('https://'):
+            return image_name
+        elif image_name.startswith('http://') and '127.0.0.1' not in image_name and 'localhost' not in image_name:
+            return image_name
+        # Otherwise, it's a local file - return the full URL
+        else:
+            request = self.context.get('request')
+            if request and hasattr(obj.image, 'url'):
+                return request.build_absolute_uri(obj.image.url)
+            elif hasattr(obj.image, 'url'):
+                return obj.image.url
+            else:
+                return str(obj.image)
     
     def create(self, validated_data):
         tag_ids = validated_data.pop('tag_ids', [])
