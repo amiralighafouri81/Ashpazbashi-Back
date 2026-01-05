@@ -1,0 +1,17 @@
+# Black code formatter configuration
+line-length = 127
+target-version = ['py312']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | venv
+  | env
+  | __pycache__
+  | migrations
+  | chromaDB
+  | data-insertion
+)/
+'''
+

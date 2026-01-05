@@ -1,0 +1,124 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - feature/*
+      - bug-fix/*
+  pull_request:
+    branches:
+      - main
+      - feature/*
+      - bug-fix/*
+
+jobs:
+  quality-checks:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_ashpazyar_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev postgresql-client
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          # Stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Exit-zero treats all errors as warnings (uses .flake8 config)
+          flake8 . --count --exit-zero --statistics
+        continue-on-error: true
+
+      - name: Check code formatting with black
+        run: |
+          pip install black
+          black --check --diff . --config .black
+        continue-on-error: true
+
+      - name: Run Django checks
+        run: |
+          cd Ashpazbashi
+          python manage.py check --deploy
+        env:
+          SECRET_KEY: test-secret-key-for-ci
+          DEBUG: 'False'
+          DB_NAME: test_ashpazyar_db
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_HOST: localhost
+          DB_PORT: '5432'
+          CORS_ALLOWED_ORIGINS: http://localhost:3000
+
+      - name: Run database migrations
+        run: |
+          cd Ashpazbashi
+          python manage.py migrate --noinput
+        env:
+          SECRET_KEY: test-secret-key-for-ci
+          DEBUG: 'False'
+          DB_NAME: test_ashpazyar_db
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_HOST: localhost
+          DB_PORT: '5432'
+          CORS_ALLOWED_ORIGINS: http://localhost:3000
+
+      - name: Run unit/integration tests
+        run: |
+          cd Ashpazbashi
+          python manage.py test --noinput --verbosity=2
+        env:
+          SECRET_KEY: test-secret-key-for-ci
+          DEBUG: 'False'
+          DB_NAME: test_ashpazyar_db
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_HOST: localhost
+          DB_PORT: '5432'
+          CORS_ALLOWED_ORIGINS: http://localhost:3000
+
+      - name: Check for missing migrations
+        run: |
+          cd Ashpazbashi
+          python manage.py makemigrations --check --dry-run
+        env:
+          SECRET_KEY: test-secret-key-for-ci
+          DEBUG: 'False'
+          DB_NAME: test_ashpazyar_db
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_HOST: localhost
+          DB_PORT: '5432'
+          CORS_ALLOWED_ORIGINS: http://localhost:3000
+
