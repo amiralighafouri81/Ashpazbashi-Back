@@ -3,11 +3,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, Count, Avg
+from django.conf import settings
 from .models import Recipe, RecipeIngredient, RecipeRating, RecipeGeneration
 from .serializers import (
     RecipeListSerializer, RecipeDetailSerializer, RecipeRatingSerializer,
     RecipeGenerationSerializer
 )
+from .chromadb_client import get_chromadb_client, map_chromadb_to_postgres_ids
 from ingredients.models import Ingredient
 from categories.models import Category, Tag, DietaryType
 from history.models import RecipeHistory
@@ -100,6 +102,95 @@ class RecipeViewSet(viewsets.ModelViewSet):
         
         serializer = RecipeListSerializer(recipes, many=True)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    def semantic_search(self, request):
+        """
+        POST /api/recipes/semantic-search - Semantic search using ChromaDB
+        
+        Hybrid approach: Uses ChromaDB for semantic search, then returns
+        PostgreSQL recipes for full data and user interactions.
+        
+        Body:
+        {
+            "query": "کتلت",  # Optional: text query for semantic search
+            "ingredients": ["تخم مرغ", "سیب زمینی"],  # Optional: ingredient names
+            "limit": 10  # Optional: max results (default 10)
+        }
+        """
+        query = request.data.get('query', '').strip()
+        ingredient_names = request.data.get('ingredients', [])
+        limit = int(request.data.get('limit', 10))
+
+        # Check if ChromaDB is enabled
+        use_chromadb = getattr(settings, 'USE_CHROMADB_SEARCH', True)
+        
+        if not use_chromadb or not query:
+            # Fallback to PostgreSQL search
+            recipes = Recipe.objects.filter(is_public=True)
+            if query:
+                recipes = recipes.filter(
+                    Q(title__icontains=query) | Q(description__icontains=query)
+                )
+            if ingredient_names:
+                ingredient_ids = list(
+                    Ingredient.objects.filter(name__in=ingredient_names).values_list('id', flat=True)
+                )
+                if ingredient_ids:
+                    recipes = recipes.filter(recipe_ingredients__ingredient_id__in=ingredient_ids).distinct()
+            
+            recipes = recipes[:limit]
+            serializer = RecipeListSerializer(recipes, many=True)
+            return Response(serializer.data)
+
+        # Use ChromaDB for semantic search
+        try:
+            chromadb_client = get_chromadb_client()
+            chromadb_results = chromadb_client.search(
+                query=query,
+                include_ingredients=ingredient_names if ingredient_names else None,
+                limit=limit * 2  # Get more results to account for filtering
+            )
+
+            if not chromadb_results:
+                return Response([])
+
+            # Map ChromaDB results to PostgreSQL recipe IDs
+            recipe_ids = map_chromadb_to_postgres_ids(chromadb_results)
+
+            if not recipe_ids:
+                return Response([])
+
+            # Get full recipe data from PostgreSQL (preserves order from ChromaDB)
+            recipes_dict = {
+                recipe.id: recipe
+                for recipe in Recipe.objects.filter(
+                    id__in=recipe_ids,
+                    is_public=True
+                ).select_related('author', 'category').prefetch_related('tags', 'dietary_types')
+            }
+
+            # Order recipes by ChromaDB relevance
+            ordered_recipes = [recipes_dict[rid] for rid in recipe_ids if rid in recipes_dict]
+            ordered_recipes = ordered_recipes[:limit]
+
+            serializer = RecipeListSerializer(ordered_recipes, many=True)
+            return Response(serializer.data)
+
+        except Exception as e:
+            # Fallback to PostgreSQL on error
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'ChromaDB semantic search failed: {e}')
+            
+            recipes = Recipe.objects.filter(is_public=True)
+            if query:
+                recipes = recipes.filter(
+                    Q(title__icontains=query) | Q(description__icontains=query)
+                )
+            recipes = recipes[:limit]
+            serializer = RecipeListSerializer(recipes, many=True)
+            return Response(serializer.data)
     
     @action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny])
     def similar(self, request, pk=None):
