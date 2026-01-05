@@ -82,7 +82,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             status=status.HTTP_202_ACCEPTED
         )
     
-    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    @action(detail=False, methods=['post'], url_path='by-ingredients', permission_classes=[permissions.AllowAny])
     def by_ingredients(self, request):
         """POST /api/recipes/by-ingredients - Find recipes by available ingredients"""
         ingredient_ids = request.data.get('ingredient_ids', [])
