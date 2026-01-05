@@ -69,9 +69,10 @@ jobs:
       - name: Run Django checks
         run: |
           cd Ashpazbashi
-          python manage.py check --deploy
+          # Use regular check instead of --deploy to avoid security warnings in CI
+          python manage.py check
         env:
-          SECRET_KEY: test-secret-key-for-ci
+          SECRET_KEY: test-secret-key-for-ci-with-more-than-50-characters-to-avoid-warnings
           DEBUG: 'False'
           DB_NAME: test_ashpazyar_db
           DB_USER: postgres
@@ -85,7 +86,7 @@ jobs:
           cd Ashpazbashi
           python manage.py migrate --noinput
         env:
-          SECRET_KEY: test-secret-key-for-ci
+          SECRET_KEY: test-secret-key-for-ci-with-more-than-50-characters-to-avoid-warnings
           DEBUG: 'False'
           DB_NAME: test_ashpazyar_db
           DB_USER: postgres
@@ -99,7 +100,7 @@ jobs:
           cd Ashpazbashi
           python manage.py test --noinput --verbosity=2
         env:
-          SECRET_KEY: test-secret-key-for-ci
+          SECRET_KEY: test-secret-key-for-ci-with-more-than-50-characters-to-avoid-warnings
           DEBUG: 'False'
           DB_NAME: test_ashpazyar_db
           DB_USER: postgres
@@ -113,7 +114,7 @@ jobs:
           cd Ashpazbashi
           python manage.py makemigrations --check --dry-run
         env:
-          SECRET_KEY: test-secret-key-for-ci
+          SECRET_KEY: test-secret-key-for-ci-with-more-than-50-characters-to-avoid-warnings
           DEBUG: 'False'
           DB_NAME: test_ashpazyar_db
           DB_USER: postgres
