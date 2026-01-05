@@ -1,6 +1,9 @@
 """
-Test script for Signup and Login
-Run: python test_auth.py
+Manual test script for Signup and Login
+Run: python manual_test_auth.py
+
+Note: This is a manual test script, not a Django unit test.
+It requires the server to be running and is excluded from automated test runs.
 """
 import requests
 

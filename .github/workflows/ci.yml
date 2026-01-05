@@ -98,7 +98,8 @@ jobs:
       - name: Run unit/integration tests
         run: |
           cd Ashpazbashi
-          python manage.py test --noinput --verbosity=2
+          # Run tests for all apps, excluding manual test scripts
+          python manage.py test --noinput --verbosity=2 users recipes ingredients nutrition bookmarks history categories sharing
         env:
           SECRET_KEY: test-secret-key-for-ci-with-more-than-50-characters-to-avoid-warnings
           DEBUG: 'False'
