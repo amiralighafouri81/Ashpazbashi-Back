@@ -358,8 +358,68 @@ python manage.py makemigrations
 python manage.py migrate
 ```
 
+### Code Quality
+```bash
+# Lint with flake8
+flake8 .
+
+# Format code with black
+black .
+
+# Check formatting without changes
+black --check .
+```
+
 ### Accessing Admin Panel
 Visit `http://127.0.0.1:8000/admin/` and login with superuser credentials.
+
+## CI/CD
+
+این پروژه از GitHub Actions برای CI/CD استفاده می‌کند.
+
+### Workflow CI
+
+هر بار که:
+- کد به شاخه‌های `main`, `feature/*`, یا `bug-fix/*` push شود
+- یک Pull Request به این شاخه‌ها ایجاد شود
+
+workflow CI به صورت خودکار اجرا می‌شود و موارد زیر را انجام می‌دهد:
+
+1. ✅ **Lint Check**: بررسی کد با flake8
+2. ✅ **Code Formatting**: بررسی فرمت کد با black
+3. ✅ **Django Checks**: اجرای `python manage.py check --deploy`
+4. ✅ **Database Migrations**: اجرای migrations
+5. ✅ **Unit/Integration Tests**: اجرای تمام تست‌ها
+6. ✅ **Migration Check**: بررسی اینکه migrations جدید نیاز نیست
+
+### Branch Protection
+
+برای فعال‌سازی branch protection و اطمینان از اینکه PRها فقط در صورت پاس شدن تست‌ها merge شوند، به فایل [`.github/BRANCH_PROTECTION.md`](.github/BRANCH_PROTECTION.md) مراجعه کنید.
+
+### اجرای محلی CI Checks
+
+برای اجرای همان چک‌های CI به صورت محلی:
+
+```bash
+# نصب dependencies
+pip install -r requirements.txt
+
+# Lint
+flake8 .
+
+# Format check
+black --check .
+
+# Django checks
+cd Ashpazbashi
+python manage.py check --deploy
+
+# Run tests
+python manage.py test
+
+# Check migrations
+python manage.py makemigrations --check --dry-run
+```
 
 ## Notes
 
