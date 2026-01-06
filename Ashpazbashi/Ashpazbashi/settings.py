@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'django_filters',
+    'drf_spectacular',  # Swagger/OpenAPI documentation
     'playground',
     'users',
     'recipes',
@@ -70,6 +71,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'Ashpazbashi.middleware.RequestResponseLoggingMiddleware',  # Request/Response logging
 ]
 
 ROOT_URLCONF = 'Ashpazbashi.urls'
@@ -171,6 +173,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 # JWT Settings
@@ -190,3 +193,88 @@ CORS_ALLOWED_ORIGINS = os.getenv(
 ).split(',')
 
 CORS_ALLOW_CREDENTIALS = True
+
+# Logging Configuration
+LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR.mkdir(exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'json': {
+            'format': '{message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'api_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'api_requests.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'json',
+        },
+    },
+    'loggers': {
+        'api_requests': {
+            'handlers': ['api_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
+# drf-spectacular settings for Swagger/OpenAPI
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'AshpazYar API',
+    'DESCRIPTION': 'Django REST Framework API for AshpazYar cooking application. This API provides endpoints for recipes, ingredients, nutrition, bookmarks, history, and user management.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': '/api/',
+    'AUTHENTICATION_WHITELIST': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'SERVERS': [
+        {
+            'url': 'http://127.0.0.1:8000',
+            'description': 'Development server'
+        },
+        {
+            'url': 'https://api.yourdomain.com',
+            'description': 'Production server'
+        },
+    ],
+    'TAGS': [
+        {'name': 'Authentication', 'description': 'User authentication and JWT token management'},
+        {'name': 'Users', 'description': 'User profile and preferences management'},
+        {'name': 'Recipes', 'description': 'Recipe CRUD operations, search, and AI generation'},
+        {'name': 'Ingredients', 'description': 'Ingredient catalog and substitution suggestions'},
+        {'name': 'Nutrition', 'description': 'Nutrition calculation and information'},
+        {'name': 'Bookmarks', 'description': 'User recipe bookmarks'},
+        {'name': 'History', 'description': 'User recipe viewing history'},
+        {'name': 'Categories', 'description': 'Recipe categories, tags, and dietary types'},
+        {'name': 'Sharing', 'description': 'Recipe sharing functionality'},
+    ],
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': False,
+        'defaultModelsExpandDepth': 2,
+        'defaultModelExpandDepth': 2,
+        'displayRequestDuration': True,
+        'docExpansion': 'list',
+        'filter': True,
+        'showExtensions': True,
+        'showCommonExtensions': True,
+    },
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'http',
+            'scheme': 'bearer',
+            'bearerFormat': 'JWT',
+        }
+    },
+}
