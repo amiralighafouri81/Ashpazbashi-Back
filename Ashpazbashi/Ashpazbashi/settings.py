@@ -71,6 +71,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'Ashpazbashi.middleware.RequestResponseLoggingMiddleware',  # Request/Response logging
 ]
 
 ROOT_URLCONF = 'Ashpazbashi.urls'
@@ -192,6 +193,38 @@ CORS_ALLOWED_ORIGINS = os.getenv(
 ).split(',')
 
 CORS_ALLOW_CREDENTIALS = True
+
+# Logging Configuration
+LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR.mkdir(exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'json': {
+            'format': '{message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'api_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'api_requests.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'json',
+        },
+    },
+    'loggers': {
+        'api_requests': {
+            'handlers': ['api_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
 
 # drf-spectacular settings for Swagger/OpenAPI
 SPECTACULAR_SETTINGS = {

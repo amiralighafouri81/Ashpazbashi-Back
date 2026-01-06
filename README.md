@@ -50,6 +50,56 @@ python manage.py runserver
 
 The API will be available at `http://127.0.0.1:8000/`
 
+## Request/Response Logging
+
+All API requests and responses are automatically logged to `logs/api_requests.log`. The logger:
+
+- **Logs only API requests** (`/api/*` endpoints)
+- **Excludes Swagger/ReDoc endpoints** (`/api/docs/`, `/api/redoc/`, `/api/schema/`)
+- **Logs request details**: method, path, query parameters, user info, IP address, request body
+- **Logs response details**: status code, response body, request duration
+- **Rotates log files**: Max 10MB per file, keeps 5 backup files
+- **Formats logs as JSON** for easy parsing
+
+### Log File Location
+
+- **Development**: `Ashpazbashi/logs/api_requests.log`
+- Log files are automatically rotated when they reach 10MB
+
+### Log Format
+
+Each log entry is a JSON object containing:
+```json
+{
+  "request": {
+    "method": "POST",
+    "path": "/api/recipes/",
+    "query_params": {},
+    "user": {"id": 1, "username": "john"},
+    "ip_address": "127.0.0.1",
+    "body": {"title": "Recipe Title"}
+  },
+  "response": {
+    "status_code": 201,
+    "duration_ms": 45.23,
+    "body": {"id": 1, "title": "Recipe Title"}
+  }
+}
+```
+
+### Viewing Logs
+
+```bash
+# View recent logs
+tail -f Ashpazbashi/logs/api_requests.log
+
+# View logs with JSON formatting
+tail -f Ashpazbashi/logs/api_requests.log | jq
+
+# Search logs for specific endpoint
+grep "/api/recipes/" Ashpazbashi/logs/api_requests.log
+```
+
 ## API Documentation (Swagger)
 
 The API documentation is available via Swagger UI and ReDoc:
