@@ -50,6 +50,27 @@ python manage.py runserver
 
 The API will be available at `http://127.0.0.1:8000/`
 
+## API Documentation (Swagger)
+
+The API documentation is available via Swagger UI and ReDoc:
+
+- **Swagger UI**: `http://127.0.0.1:8000/api/docs/`
+- **ReDoc**: `http://127.0.0.1:8000/api/redoc/`
+- **OpenAPI Schema**: `http://127.0.0.1:8000/api/schema/`
+
+### Using Swagger UI
+
+1. Navigate to `http://127.0.0.1:8000/api/docs/`
+2. Click the **Authorize** button to authenticate with JWT tokens
+3. Enter your JWT token in the format: `Bearer <your-access-token>`
+4. Explore and test all API endpoints interactively
+
+### Getting JWT Token for Swagger
+
+1. Use the `/api/auth/jwt/create/` endpoint to get your access token
+2. Copy the `access` token from the response
+3. In Swagger UI, click **Authorize** and enter: `Bearer <your-access-token>`
+
 ## API Endpoints
 
 ### Authentication
