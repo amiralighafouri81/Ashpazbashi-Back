@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  backend:
+    # Use image from registry if IMAGE_TAG is set, otherwise build locally
+    image: ${IMAGE_TAG:-ashpazbashi-backend:latest}
+    build:
+      context: .
+      target: runner
+    env_file:
+      - .env.production
+    environment:
+      - DEBUG=False
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - media_data:/app/Ashpazbashi/media
+      - static_data:/app/Ashpazbashi/staticfiles
+    depends_on:
+      - db
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-ashpazyar_db}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
+  media_data:
+    driver: local
+  static_data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
+
